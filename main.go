@@ -13,10 +13,13 @@ const (
 	defaultInterval = 1000
 	maxArguments    = 128
 	quiet           = false
-	halt            = 0
+	halt            = true
+	defaultExitCode = 127
 )
 
 func main() {
+
+	// TODO pelo menos um arg é requerido
 
 	val := strings.Join(os.Args[1:], " ")
 	commands := []string{"-c", val}
@@ -57,13 +60,19 @@ func main() {
 
 			fmt.Print("\033[u\033[K") // reset cursor
 
-			fmt.Println(err)
-
 			if !quiet || err != nil {
 				fmt.Printf("%s", out)
 			}
 
-			time.Sleep(2 * time.Second)
+			if halt && err != nil {
+				exitCode := defaultExitCode
+				if xerr, ok := err.(*exec.ExitError); ok {
+					exitCode = xerr.ExitCode()
+				}
+				os.Exit(exitCode)
+			}
+
+			time.Sleep(10 * time.Second)
 		}
 	}()
 

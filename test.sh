@@ -1,5 +1,6 @@
 #!/bin/sh
-echo 1
+
+echo out`date`
 sleep 3
-exit 1234
-echo 2
+exit 12
+
