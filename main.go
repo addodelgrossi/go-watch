@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,49 +10,43 @@ import (
 )
 
 const (
-	version         = "0.3.1"
-	defaultInterval = 1000
-	maxArguments    = 128
-	quiet           = false
-	halt            = true
-	defaultExitCode = 127
+	version = "0.3.1"
+)
+
+var (
+	interval int
+	timeout  int
+	quiet    bool
+	halt     bool
+	help     bool
 )
 
 func main() {
+	flag.IntVar(&interval, "interval", 1, "interval in seconds defaulting to 1")
+	flag.IntVar(&timeout, "timeout", -1, "duration until the program ends")
+	flag.BoolVar(&quiet, "quiet", false, "only output stderr")
+	flag.BoolVar(&halt, "halt", false, "halt on failure")
+	flag.BoolVar(&help, "help", false, "output this help information")
 
-	// TODO pelo menos um arg é requerido
+	if len(os.Args) <= 1 {
+		flag.Usage()
+		os.Exit(1)
+	}
 
-	val := strings.Join(os.Args[1:], " ")
+	flag.Parse()
+
+	val := strings.Join(flag.Args(), " ")
 	commands := []string{"-c", val}
-	duration := 0 * time.Second
-	// halt := false
-
-	// fmt.Printf("commands %s, val %s, os %s\n", commands, val, runtime.GOOS)
 
 	fmt.Print("\033[s") // cursor mark
 
 	done := make(chan bool)
 
-	// if quiet {
-	// 	os.Stdout = os.NewFile(uintptr(syscall.Stdin), os.DevNull)
-	// }
-
-	// type IOStreams struct {
-	// 	out    io.Writer
-	// 	errOut io.Writer
-	// }
-
-	// streams := IOStreams{
-	// 	out:    os.Stdout,
-	// 	errOut: os.Stderr,
-	// }
-
 	go func() {
-		finishAt := time.Now().Add(duration)
+		finishAt := time.Now().Add(time.Duration(timeout) * time.Second)
 		for {
 
-			if duration != 0 && time.Now().After(finishAt) {
-				fmt.Printf("exit by duration")
+			if timeout > 0 && time.Now().After(finishAt) {
 				close(done)
 			}
 
@@ -65,17 +60,16 @@ func main() {
 			}
 
 			if halt && err != nil {
-				exitCode := defaultExitCode
+				exitCode := 124
 				if xerr, ok := err.(*exec.ExitError); ok {
 					exitCode = xerr.ExitCode()
 				}
 				os.Exit(exitCode)
 			}
 
-			time.Sleep(10 * time.Second)
+			time.Sleep(time.Duration(interval) * time.Second)
 		}
 	}()
 
 	<-done
-
 }
