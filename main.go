@@ -38,7 +38,9 @@ func main() {
 	val := strings.Join(flag.Args(), " ")
 	commands := []string{"-c", val}
 
-	fmt.Print("\033[s") // cursor mark
+	fmt.Print("\033[2J")   // clear screen
+	fmt.Print("\033[1;1H") // move to position 1,1
+	fmt.Print("\033[s")    // cursor mark
 
 	done := make(chan bool)
 
